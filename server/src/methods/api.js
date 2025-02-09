@@ -1,3 +1,3 @@
 export const test = () => {
-    return 'test ok 200 bishes';
+    return {msg: 'test ok 200 bishes'};
   };

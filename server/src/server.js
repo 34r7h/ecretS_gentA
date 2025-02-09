@@ -13,11 +13,6 @@ const corsConfig = {
 
 app.use(cors(corsConfig));
 
-// const dbInstance = open({
-//   path: process.env.DB_PATH || 'data/db',
-//   compression: true,
-//   encoding: 'json',
-// });
 
 export const db = open({
   path: "./data",
