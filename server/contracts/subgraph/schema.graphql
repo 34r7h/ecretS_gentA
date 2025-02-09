@@ -1,0 +1,90 @@
+type Agent @entity {
+  id: ID!
+  tokenId: BigInt!
+  owner: Bytes!
+  team: String!
+  agentType: String!
+  iq: Int!
+  charisma: Int!
+  toughness: Int!
+  luck: Int!
+  tech: Int!
+  weapons: Int!
+  people: Int!
+  planning: Int!
+  missions: [Mission!]! @derivedFrom(field: "agents")
+  assets: [Asset!]! @derivedFrom(field: "owner")
+  isAlive: Boolean!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type Asset @entity {
+  id: ID!
+  tokenId: BigInt!
+  owner: Agent!
+  assetType: String!
+  effectiveness: Int!
+  createdAt: BigInt!
+}
+
+type Mission @entity {
+  id: ID!
+  agents: [Agent!]!
+  assets: [Asset!]!
+  location: String!
+  missionType: String!
+  status: String!
+  intelTokensGenerated: BigInt!
+  outcome: String
+  createdAt: BigInt!
+  completedAt: BigInt
+}
+
+type Intel @entity {
+  id: ID!
+  tokenId: BigInt!
+  owner: Bytes!
+  mission: Mission!
+  isFake: Boolean!
+  createdAt: BigInt!
+}
+
+type Team @entity {
+  id: ID!
+  name: String!
+  members: [Bytes!]!
+  agents: [Agent!]! @derivedFrom(field: "team")
+  totalIntelTokens: BigInt!
+  specialAbilityLastUsed: BigInt
+  specialAbilityCooldown: BigInt
+}
+
+type Season @entity {
+  id: ID!
+  currentPhase: String!
+  currentCycle: Int!
+  totalCycles: Int!
+  pot: BigInt!
+  startTime: BigInt!
+  endTime: BigInt!
+  teams: [Team!]!
+}
+
+type Secret @entity {
+  id: ID!
+  owner: Bytes!
+  secretType: String!
+  isRevealed: Boolean!
+  revealTime: BigInt
+  createdAt: BigInt!
+}
+
+type GameStat @entity {
+  id: ID!
+  totalAgents: BigInt!
+  totalMissions: BigInt!
+  totalIntelTokens: BigInt!
+  totalAssets: BigInt!
+  activePlayers: BigInt!
+} 

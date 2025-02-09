@@ -1,0 +1,84 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: GameTokens
+    network: base
+    source:
+      address: "0x0000000000000000000000000000000000000000" # To be replaced with actual contract address
+      abi: GameTokens
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Agent
+        - Asset
+        - Mission
+        - Intel
+      abis:
+        - name: GameTokens
+          file: ./abis/GameTokens.json
+      eventHandlers:
+        - event: AgentCreated(indexed uint256,address,string,string)
+          handler: handleAgentCreated
+        - event: AssetCreated(indexed uint256,uint256,string)
+          handler: handleAssetCreated
+        - event: MissionCreated(indexed uint256,string,string)
+          handler: handleMissionCreated
+        - event: IntelGenerated(indexed uint256,uint256,bool)
+          handler: handleIntelGenerated
+      file: ./src/game-tokens.ts
+
+  - kind: ethereum
+    name: GameMechanics
+    network: base
+    source:
+      address: "0x0000000000000000000000000000000000000000" # To be replaced with actual contract address
+      abi: GameMechanics
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Team
+        - Agent
+      abis:
+        - name: GameMechanics
+          file: ./abis/GameMechanics.json
+      eventHandlers:
+        - event: SpecialAbilityUsed(indexed address,string,uint256)
+          handler: handleSpecialAbilityUsed
+        - event: AgentKilled(indexed uint256,indexed address)
+          handler: handleAgentKilled
+        - event: DoubleAgentCreated(indexed uint256,indexed address)
+          handler: handleDoubleAgentCreated
+      file: ./src/game-mechanics.ts
+
+  - kind: ethereum
+    name: NillionSecrets
+    network: base
+    source:
+      address: "0x0000000000000000000000000000000000000000" # To be replaced with actual contract address
+      abi: NillionSecrets
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Secret
+      abis:
+        - name: NillionSecrets
+          file: ./abis/NillionSecrets.json
+      eventHandlers:
+        - event: SecretStored(indexed bytes32,indexed address,string)
+          handler: handleSecretStored
+        - event: SecretRevealed(indexed bytes32,indexed address)
+          handler: handleSecretRevealed
+        - event: SecretAccessGranted(indexed bytes32,indexed address)
+          handler: handleSecretAccessGranted
+      file: ./src/nillion-secrets.ts 
