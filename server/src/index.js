@@ -1,5 +1,5 @@
 import { app } from './server.js';
-import { test } from './methods/api';
+import { test } from './methods/api.js';
 
 const routes = [
   {
