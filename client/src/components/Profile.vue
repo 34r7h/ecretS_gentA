@@ -1,174 +1,158 @@
 <template>
-  <div class="profile">
+  <div class="profile" :style="{ background: userStore.currentTheme.background }">
     <div class="profile-header">
       <div class="player-info">
-        <h1>Agent Profile</h1>
-        <div class="team-badge">
-          {{ userStore.team }}
-          <div class="ability-tooltip">
-            {{ teamAbilities[userStore.team]?.description }}
+        <div class="player-avatar">
+          <!-- Team-based avatar background -->
+          <div class="avatar-frame" :style="{ background: userStore.currentTheme.primary }">
+            {{ userStore.currentUser?.name?.[0]?.toUpperCase() }}
+          </div>
+        </div>
+        <div class="player-details">
+          <h1>{{ userStore.currentUser?.name }}</h1>
+          <div class="team-badge" :style="{ background: userStore.currentTheme.secondary }">
+            {{ userStore.team }}
+            <div class="ability-tooltip">
+              {{ userStore.getTeamAbility?.description }}
+            </div>
           </div>
         </div>
       </div>
-      <div class="ability-status">
-        <span class="ability-name">{{ teamAbilities[userStore.team]?.name }}</span>
-        <button 
-          class="use-ability-btn"
-          :disabled="!canUseAbility"
-          @click="useTeamAbility"
-        >
-          Use Team Ability
+      <div class="player-stats">
+        <div class="stat-card">
+          <span class="stat-value">{{ playerStats.totalIntel }}</span>
+          <span class="stat-label">Intel Tokens</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ playerStats.agentCount }}</span>
+          <span class="stat-label">Agents</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ playerStats.successRate }}%</span>
+          <span class="stat-label">Success Rate</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-content">
+      <!-- Activity Feed -->
+      <div class="activity-feed">
+        <h2>Recent Activity</h2>
+        <div class="activity-list">
+          <div v-for="activity in recentActivity" :key="activity.id" class="activity-card">
+            <div class="activity-header">
+              <span class="activity-type" :class="activity.type">{{ activity.type }}</span>
+              <span class="activity-time">{{ formatTime(activity.timestamp) }}</span>
+            </div>
+            <p class="activity-description">{{ activity.description }}</p>
+            <div v-if="activity.outcome" class="activity-outcome" :class="activity.outcome.success ? 'success' : 'failure'">
+              {{ activity.outcome.description }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent Roster -->
+      <div class="agent-roster">
+        <h2>Agent Roster</h2>
+        <div class="roster-grid">
+          <div v-for="agent in playerAgents" :key="agent.id" class="agent-card">
+            <div class="agent-header">
+              <h3>{{ agent.name }}</h3>
+              <span class="agent-type">{{ agent.type }}</span>
+            </div>
+            <div class="agent-status" :class="{ active: agent.onMission }">
+              {{ agent.onMission ? 'On Mission' : 'Available' }}
+            </div>
+            <div class="agent-intel">
+              <span class="intel-icon">🔷</span>
+              {{ agent.intelTokens }} INTEL
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alliance Network -->
+      <div class="alliance-network">
+        <h2>Alliance Network</h2>
+        <div class="network-grid">
+          <div class="active-alliances">
+            <h3>Active Alliances</h3>
+            <div class="alliance-list">
+              <div v-for="alliance in activeAlliances" :key="alliance.id" class="alliance-card">
+                <div class="alliance-info">
+                  <span class="team-name">{{ alliance.team }}</span>
+                  <span class="alliance-duration">{{ formatDuration(alliance.duration) }}</span>
+                </div>
+                <button @click="terminateAlliance(alliance)" class="terminate-btn">
+                  Terminate
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="alliance-requests">
+            <h3>Pending Requests</h3>
+            <div class="request-list">
+              <div v-for="request in allianceRequests" :key="request.id" class="request-card">
+                <div class="request-info">
+                  <span class="team-name">{{ request.team }}</span>
+                  <span class="request-time">{{ formatTime(request.timestamp) }}</span>
+                </div>
+                <div class="request-actions">
+                  <button @click="acceptAlliance(request)" class="accept-btn">Accept</button>
+                  <button @click="rejectAlliance(request)" class="reject-btn">Reject</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button @click="showAllianceForm = true" class="new-alliance-btn">
+          Propose New Alliance
         </button>
       </div>
     </div>
 
-    <div class="profile-grid">
-      <!-- Stats Overview -->
-      <div class="profile-card">
-        <h2>Season Stats</h2>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">Total Intel</span>
-            <span class="stat-value">{{ playerStats.totalIntel }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Successful Missions</span>
-            <span class="stat-value">{{ playerStats.successfulMissions }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Failed Missions</span>
-            <span class="stat-value">{{ playerStats.failedMissions }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Active Agents</span>
-            <span class="stat-value">{{ playerStats.activeAgents }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Team Rankings -->
-      <div class="profile-card">
-        <h2>Team Rankings</h2>
-        <div class="rankings-list">
-          <div 
-            v-for="team in teamRankings" 
-            :key="team.name"
-            class="ranking-item"
-            :class="{ 'current-team': team.name === userStore.team }"
-          >
-            <span class="rank">#{{ team.rank }}</span>
-            <span class="team-name">{{ team.name }}</span>
-            <span class="team-intel">{{ team.intel }} INTEL</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Active Alliances -->
-      <div class="profile-card">
-        <h2>Active Alliances</h2>
-        <div class="alliances-list">
-          <div 
-            v-for="alliance in activeAlliances" 
-            :key="alliance.id"
-            class="alliance-item"
-          >
-            <div class="alliance-info">
-              <span class="team-name">{{ alliance.team }}</span>
-              <span class="duration">{{ formatDuration(alliance.duration) }}</span>
-            </div>
-            <button 
-              @click="terminateAlliance(alliance)"
-              class="terminate-btn"
-            >
-              Terminate
-            </button>
-          </div>
-          <button 
-            @click="showAllianceForm = true"
-            class="request-alliance-btn"
-          >
-            Request Alliance
-          </button>
-        </div>
-      </div>
-
-      <!-- Alliance Requests -->
-      <div class="profile-card">
-        <h2>Alliance Requests</h2>
-        <div class="requests-list">
-          <div 
-            v-for="request in allianceRequests" 
-            :key="request.id"
-            class="request-item"
-          >
-            <div class="request-info">
-              <span class="team-name">{{ request.team }}</span>
-              <span class="timestamp">{{ formatTime(request.timestamp) }}</span>
-            </div>
-            <div class="request-actions">
-              <button 
-                @click="acceptAlliance(request)"
-                class="accept-btn"
-              >
-                Accept
-              </button>
-              <button 
-                @click="rejectAlliance(request)"
-                class="reject-btn"
-              >
-                Reject
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Alliance Request Modal -->
+    <!-- Alliance Proposal Modal -->
     <div v-if="showAllianceForm" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Request Alliance</h2>
+          <h2>Propose Alliance</h2>
           <button @click="showAllianceForm = false" class="close-btn">&times;</button>
         </div>
-
-        <form @submit.prevent="handleAllianceRequest" class="alliance-form">
+        <form @submit.prevent="handleAllianceProposal" class="alliance-form">
           <div class="form-group">
             <label for="team">Select Team</label>
-            <select 
-              id="team"
-              v-model="allianceForm.team"
-              required
-            >
+            <select id="team" v-model="allianceForm.team" required>
               <option value="">Choose a team</option>
-              <option 
-                v-for="team in availableTeams" 
-                :key="team"
-                :value="team"
-              >
+              <option v-for="team in availableTeams" :key="team" :value="team">
                 {{ team }}
               </option>
             </select>
           </div>
-
           <div class="form-group">
-            <label for="message">Message</label>
+            <label for="terms">Alliance Terms</label>
             <textarea 
-              id="message"
-              v-model="allianceForm.message"
+              id="terms"
+              v-model="allianceForm.terms"
               rows="3"
-              placeholder="Propose terms of alliance..."
+              placeholder="Propose your terms for the alliance..."
               required
             ></textarea>
           </div>
-
+          <div class="form-group">
+            <label for="duration">Proposed Duration (cycles)</label>
+            <input 
+              id="duration"
+              type="number"
+              v-model="allianceForm.duration"
+              min="1"
+              max="10"
+              required
+            />
+          </div>
           <div class="form-actions">
-            <button type="submit" class="submit-btn">Send Request</button>
-            <button 
-              type="button" 
-              @click="showAllianceForm = false"
-              class="cancel-btn"
-            >
+            <button type="submit" class="submit-btn">Send Proposal</button>
+            <button type="button" @click="showAllianceForm = false" class="cancel-btn">
               Cancel
             </button>
           </div>
@@ -181,69 +165,72 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useUserStore } from '../state/user'
+import { useGameStore } from '../state/game'
 
 const userStore = useUserStore()
+const gameStore = useGameStore()
 const showAllianceForm = ref(false)
 
 const allianceForm = ref({
   team: '',
-  message: ''
+  terms: '',
+  duration: 3
 })
-
-const teamAbilities = {
-  CIA: { 
-    name: 'EAGLE EYE',
-    description: '+25% Intel tokens for successful missions for 3 turns'
-  },
-  FSB: { 
-    name: 'DOUBLE AGENT',
-    description: 'Steals a target agent from another team'
-  },
-  MSS: { 
-    name: 'DRAGON EAR',
-    description: 'Gains access to a player\'s comms for 1 turn'
-  },
-  MI6: { 
-    name: 'LICENSE TO SHILL',
-    description: 'Able to kill a target agent of another team'
-  },
-  MOSSAD: { 
-    name: 'MIRAGE',
-    description: 'Creates fake INTEL TOKENS to ambush SECRET AGENTS'
-  },
-  NINJA: { 
-    name: 'SHADOW',
-    description: 'Obscures all comms for entire team for 2 turns'
-  }
-}
 
 // Mock data for development
 const playerStats = computed(() => ({
   totalIntel: 156,
-  successfulMissions: 12,
-  failedMissions: 3,
-  activeAgents: 4
+  agentCount: 4,
+  successRate: 75
 }))
 
-const teamRankings = computed(() => [
-  { rank: 1, name: 'CIA', intel: 450 },
-  { rank: 2, name: 'MSS', intel: 380 },
-  { rank: 3, name: 'MI6', intel: 320 },
-  { rank: 4, name: 'NINJA', intel: 280 },
-  { rank: 5, name: 'FSB', intel: 250 },
-  { rank: 6, name: 'MOSSAD', intel: 220 }
+const recentActivity = computed(() => [
+  {
+    id: 1,
+    type: 'MISSION',
+    timestamp: new Date().toISOString(),
+    description: 'Deployed Agent Smith to infiltrate target facility in Tokyo',
+    outcome: {
+      success: true,
+      description: 'Successfully extracted target data and acquired 15 INTEL'
+    }
+  },
+  {
+    id: 2,
+    type: 'ALLIANCE',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    description: 'Formed alliance with MI6 team',
+  },
+  {
+    id: 3,
+    type: 'AGENT',
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+    description: 'Recruited new HACKER agent: Ghost Protocol',
+  }
+])
+
+const playerAgents = computed(() => [
+  {
+    id: 1,
+    name: 'Agent Smith',
+    type: 'OPERATIVE',
+    onMission: true,
+    intelTokens: 45
+  },
+  {
+    id: 2,
+    name: 'Ghost Protocol',
+    type: 'HACKER',
+    onMission: false,
+    intelTokens: 30
+  }
 ])
 
 const activeAlliances = computed(() => [
   {
     id: 1,
     team: 'MI6',
-    duration: 172800000 // 48 hours in milliseconds
-  },
-  {
-    id: 2,
-    team: 'NINJA',
-    duration: 86400000 // 24 hours in milliseconds
+    duration: 172800000 // 48 hours
   }
 ])
 
@@ -256,149 +243,138 @@ const allianceRequests = computed(() => [
 ])
 
 const availableTeams = computed(() => 
-  Object.keys(teamAbilities).filter(team => 
+  Object.keys(userStore.teamThemes).filter(team => 
     team !== userStore.team && 
     !activeAlliances.value.some(a => a.team === team)
   )
 )
 
-const canUseAbility = computed(() => true) // Mock ability cooldown check
+const formatTime = (timestamp) => {
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diff = now - date
+
+  if (diff < 3600000) { // Less than 1 hour
+    const minutes = Math.floor(diff / 60000)
+    return `${minutes}m ago`
+  } else if (diff < 86400000) { // Less than 24 hours
+    const hours = Math.floor(diff / 3600000)
+    return `${hours}h ago`
+  } else {
+    return date.toLocaleDateString()
+  }
+}
 
 const formatDuration = (ms) => {
   const hours = Math.floor(ms / 3600000)
   return `${hours}h remaining`
 }
 
-const formatTime = (timestamp) => {
-  return new Date(timestamp).toLocaleString()
-}
-
-const useTeamAbility = () => {
-  // Mock ability usage
-  console.log('Using team ability:', teamAbilities[userStore.team].name)
-}
-
 const terminateAlliance = (alliance) => {
-  // Mock alliance termination
   console.log('Terminating alliance with:', alliance.team)
 }
 
 const acceptAlliance = (request) => {
-  // Mock alliance acceptance
   console.log('Accepting alliance with:', request.team)
 }
 
 const rejectAlliance = (request) => {
-  // Mock alliance rejection
   console.log('Rejecting alliance with:', request.team)
 }
 
-const handleAllianceRequest = () => {
-  // Mock alliance request
-  console.log('Requesting alliance:', allianceForm.value)
+const handleAllianceProposal = () => {
+  console.log('Proposing alliance:', allianceForm.value)
   showAllianceForm.value = false
   allianceForm.value = {
     team: '',
-    message: ''
+    terms: '',
+    duration: 3
   }
 }
 </script>
 
 <style scoped>
 .profile {
+  min-height: 100vh;
   padding: 2rem;
+  color: white;
 }
 
 .profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: var(--secondary-color);
+  border-radius: 1rem;
+  padding: 2rem;
   margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
 }
 
 .player-info {
   display: flex;
+  gap: 2rem;
+}
+
+.player-avatar {
+  width: 100px;
+  height: 100px;
+}
+
+.avatar-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.player-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .team-badge {
   position: relative;
   padding: 0.5rem 1rem;
-  background: #2a2a2a;
   border-radius: 0.5rem;
   cursor: help;
+  display: inline-block;
 }
 
 .ability-tooltip {
   position: absolute;
   top: 100%;
-  right: 0;
-  background: #333;
+  left: 0;
+  background: var(--secondary-color);
   padding: 0.5rem;
   border-radius: 0.5rem;
   width: 200px;
   display: none;
   z-index: 10;
+  margin-top: 0.5rem;
 }
 
 .team-badge:hover .ability-tooltip {
   display: block;
 }
 
-.ability-status {
+.player-stats {
   display: flex;
-  align-items: center;
   gap: 1rem;
 }
 
-.use-ability-btn {
-  padding: 0.5rem 1rem;
-  background: #ff4444;
-  color: white;
-  border: none;
+.stat-card {
+  background: var(--primary-color);
+  padding: 1rem;
   border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.use-ability-btn:hover:not(:disabled) {
-  background: #ff6666;
-}
-
-.use-ability-btn:disabled {
-  background: #666;
-  cursor: not-allowed;
-}
-
-.profile-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-}
-
-.profile-card {
-  background: #2a2a2a;
-  border-radius: 1rem;
-  padding: 1.5rem;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.stat-item {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-}
-
-.stat-label {
-  color: #888;
-  font-size: 0.9rem;
+  align-items: center;
+  min-width: 120px;
 }
 
 .stat-value {
@@ -406,49 +382,162 @@ const handleAllianceRequest = () => {
   font-weight: bold;
 }
 
-.rankings-list {
+.stat-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.profile-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.activity-feed {
+  grid-column: 1;
+  background: var(--secondary-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.agent-roster {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  background: var(--secondary-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  height: fit-content;
+}
+
+.alliance-network {
+  grid-column: 1;
+  background: var(--secondary-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.roster-grid {
+  display: grid;
+  gap: 1rem;
   margin-top: 1rem;
 }
 
-.ranking-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background: #333;
+.agent-card {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
   border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.ranking-item.current-team {
-  background: #444;
-  border: 1px solid #ff4444;
-}
-
-.rank {
-  font-weight: bold;
-  color: #888;
-}
-
-.team-intel {
-  margin-left: auto;
-  font-weight: bold;
-}
-
-.alliances-list, .requests-list {
+.activity-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   margin-top: 1rem;
 }
 
-.alliance-item, .request-item {
+.activity-card {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.activity-type {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.activity-type.MISSION {
+  background: var(--accent-color);
+}
+
+.activity-type.ALLIANCE {
+  background: var(--primary-color);
+}
+
+.activity-type.AGENT {
+  background: #44ff44;
+  color: black;
+}
+
+.activity-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.activity-outcome {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.activity-outcome.success {
+  background: rgba(68, 255, 68, 0.2);
+  color: #44ff44;
+}
+
+.activity-outcome.failure {
+  background: rgba(255, 68, 68, 0.2);
+  color: #ff4444;
+}
+
+.agent-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem;
-  background: #333;
+  margin-bottom: 0.5rem;
+}
+
+.agent-type {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.agent-status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #44ff44;
+  color: black;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.agent-status.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+.agent-intel {
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.network-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.alliance-card, .request-card {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
   border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .alliance-info, .request-info {
@@ -457,9 +546,13 @@ const handleAllianceRequest = () => {
   gap: 0.25rem;
 }
 
-.duration, .timestamp {
-  color: #888;
+.team-name {
+  font-weight: bold;
+}
+
+.alliance-duration, .request-time {
   font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .request-actions {
@@ -477,36 +570,26 @@ const handleAllianceRequest = () => {
   transition: background-color 0.2s;
 }
 
-.terminate-btn:hover, .reject-btn:hover {
-  background: #ff6666;
-}
-
 .accept-btn {
   padding: 0.5rem 1rem;
   background: #44ff44;
-  color: #000;
+  color: black;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.accept-btn:hover {
-  background: #66ff66;
-}
-
-.request-alliance-btn {
+.new-alliance-btn {
+  margin-top: 1rem;
+  width: 100%;
   padding: 0.75rem;
-  background: #444;
+  background: var(--primary-color);
   color: white;
   border: none;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: background-color 0.2s;
-}
-
-.request-alliance-btn:hover {
-  background: #555;
 }
 
 .modal {
@@ -523,7 +606,7 @@ const handleAllianceRequest = () => {
 }
 
 .modal-content {
-  background: #2a2a2a;
+  background: var(--secondary-color);
   border-radius: 1rem;
   padding: 2rem;
   width: 90%;
@@ -540,7 +623,7 @@ const handleAllianceRequest = () => {
 .close-btn {
   background: none;
   border: none;
-  color: #888;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 1.5rem;
   cursor: pointer;
 }
@@ -558,14 +641,14 @@ const handleAllianceRequest = () => {
 }
 
 label {
-  color: #888;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-select, textarea {
+select, textarea, input {
   width: 100%;
   padding: 0.75rem;
-  background: #333;
-  border: 1px solid #444;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.5rem;
   color: white;
 }
@@ -586,20 +669,12 @@ select, textarea {
 }
 
 .submit-btn {
-  background: #ff4444;
+  background: var(--accent-color);
   color: white;
-}
-
-.submit-btn:hover {
-  background: #ff6666;
 }
 
 .cancel-btn {
-  background: #444;
+  background: rgba(255, 255, 255, 0.1);
   color: white;
-}
-
-.cancel-btn:hover {
-  background: #555;
 }
 </style> 
