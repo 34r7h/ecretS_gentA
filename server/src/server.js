@@ -1,6 +1,6 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
-import { RootDatabase, open } from 'lmdb';
+import { open } from 'lmdb';
 
 const app = new Elysia();
 
@@ -23,5 +23,8 @@ if (!dbInstance) {
   throw new Error('Failed to initialize database');
 }
 
-export const db = RootDatabase;
+export const db = open({
+    path: './data',
+    compression: true,
+  })
 export { app };
