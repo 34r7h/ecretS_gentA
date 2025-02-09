@@ -1,11 +1,5 @@
 import { app } from './server';
-import { create, read, update, remove, readAll } from './methods/db';
-import { start as scan } from './methods/scan';
-import { create as createUser, update as updateUser, remove as removeUser, login } from './methods/users';
-import { calculateUserPoints, calculateSystemPoints, getLeaderboard } from './methods/calculate';
-import { payout } from './methods/payout';
-import { Context } from 'elysia';
-import { Elysia } from 'elysia';
+import { test } from './methods/api';
 
 const routes = [
   {

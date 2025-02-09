@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
       "start": "bun run src/index.js",
-      "dev": "bun --watch run src/index.js",
+      "dev": "bun --watch run src/index.js"
     },
     "dependencies": {
       "@elysiajs/cors": "^1.2.0",
