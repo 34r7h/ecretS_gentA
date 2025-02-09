@@ -1,4 +1,4 @@
-import { app } from './server';
+import { app } from './server.js';
 import { test } from './methods/api';
 
 const routes = [
